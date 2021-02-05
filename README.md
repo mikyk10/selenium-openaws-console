@@ -7,6 +7,13 @@ Assuming you are working on multiple AWS consoles simultaneously across differen
 
 This tool can open up AWS console windows across multiple AWS accounts without boring and repetitive ID/PW input.
 
+# Prerequisites
+
+macOS
+Go 1.15
+Google Chrome
+Selenium webdriver for Chrome
+
 ## Install
 
 
