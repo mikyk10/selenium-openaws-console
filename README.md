@@ -19,8 +19,19 @@ Selenium webdriver for Chrome
 
 ## Configuring
 
+The first thing you need to do is to add your credentials to ~/.aws/config with special syntax for this app.
+username and password should be double-quoted so you can use special characters in the password.
+The special configuration syntax have not any special meaning in the AWS CLI tools.
+
+```
+[profile me]
+console_username = "ENTER_YOUR_USERNAME"
+console_password = "ENTER_YOUR_PASSWORD"
+```
 
 ## Usage
+
+Just enter the command. You are asked to choose an AWS profile name then it 
 
 
 ## Contributing
