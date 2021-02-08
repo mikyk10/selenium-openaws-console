@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -45,7 +46,7 @@ func main() {
 
 	profs := map[string]Role{}
 
-	homedir := os.Getenv("HOME")
+	homedir, _ := os.UserHomeDir()
 
 	var aws string
 	var username string
@@ -83,7 +84,8 @@ func main() {
 	opt := ini.LoadOptions{
 		UnescapeValueDoubleQuotes: true,
 	}
-	cfg, _ := ini.LoadSources(opt, homedir+"/.aws/config")
+
+	cfg, _ := ini.LoadSources(opt, filepath.Join(homedir, ".aws", "config"))
 	sections := cfg.Sections()
 	for i := range sections {
 		pname := strings.Replace(sections[i].Name(), "profile ", "", 1)
@@ -92,7 +94,7 @@ func main() {
 		// for this time, get console username and password from the .aws/config
 		//TODO: organize well
 		if sections[i].HasKey("console_account") {
-			username = sections[i].Key("console_account").Value()
+			aws = sections[i].Key("console_account").Value()
 			username = sections[i].Key("console_username").Value()
 			password = sections[i].Key("console_password").Value()
 		}
