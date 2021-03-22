@@ -2,7 +2,7 @@ package main
 
 /* openaws.go
  *
- * Copyright (C) 2021 Mitsutaka Naito
+ * Copyright (C) 2021 Mitsutaka Kato
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,22 +35,25 @@ import (
 	"gopkg.in/ini.v1"
 )
 
-type Role struct {
-	RoleName  string
-	AccountID string
+type Profile struct {
+	SourceProfile     string
+	AssumingRoleName  string
+	AssumingAccountID string
+	ConsoleUserName   string
+	ConsolePassword   string
+	AccountID         string
 }
 
 const url = "https://console.aws.amazon.com/console/home"
 
 func main() {
 
-	profs := map[string]Role{}
+	profs := map[string]Profile{}
 
 	homedir, _ := os.UserHomeDir()
 
-	var aws string
-	var username string
-	var password string
+	var sourceProfile Profile
+	var assumingProfile Profile
 
 	// Check Chrome installation
 	{
@@ -91,21 +94,21 @@ func main() {
 		pname := strings.Replace(sections[i].Name(), "profile ", "", 1)
 		roleArn := strings.Split(sections[i].Key("role_arn").Value(), ":")
 
+		p := Profile{
+			SourceProfile: sections[i].Key("source_profile").Value(),
+		}
+
+		if len(roleArn) == 5 {
+			p.AssumingRoleName = strings.Replace(roleArn[5], "role/", "", 1)
+			p.AssumingAccountID = roleArn[4]
+		}
+
 		// for this time, get console username and password from the .aws/config
 		//TODO: organize well
 		if sections[i].HasKey("console_account") {
-			aws = sections[i].Key("console_account").Value()
-			username = sections[i].Key("console_username").Value()
-			password = sections[i].Key("console_password").Value()
-		}
-
-		if len(roleArn) < 5 {
-			continue
-		}
-
-		p := Role{
-			RoleName:  strings.Replace(roleArn[5], "role/", "", 1),
-			AccountID: roleArn[4],
+			p.AccountID = sections[i].Key("console_account").Value()
+			p.ConsoleUserName = sections[i].Key("console_username").Value()
+			p.ConsolePassword = sections[i].Key("console_password").Value()
 		}
 
 		profs[pname] = p
@@ -116,6 +119,12 @@ func main() {
 	reader := bufio.NewReader(os.Stdin)
 	text, _ := reader.ReadString('\n')
 	prof := strings.Replace(text, "\n", "", -1)
+	sourceProfile = profs[prof]
+	assumingProfile = profs[prof]
+
+	if assumingProfile.SourceProfile != "" {
+		sourceProfile = profs[assumingProfile.SourceProfile]
+	}
 
 	// launch Selenium driver
 	options := agouti.ChromeOptions(
@@ -143,15 +152,19 @@ func main() {
 	// enter login credentials...
 	fmt.Fprintf(os.Stderr, "entering account ID\n")
 	page.Find("#iam_user_radio_button").Click()
-	page.Find("#resolving_input").SendKeys(aws)
+	page.Find("#resolving_input").SendKeys(sourceProfile.AccountID)
 	page.Find("#next_button").Click()
 
 	fmt.Fprintf(os.Stderr, "entering credentials\n")
-	page.Find("#username").SendKeys(username)
-	page.Find("#password").SendKeys(password)
+	page.Find("#username").SendKeys(sourceProfile.ConsoleUserName)
+	page.Find("#password").SendKeys(sourceProfile.ConsolePassword)
 	page.Find("#signin_button").Click()
 
-	fmt.Fprintf(os.Stderr, "waiting for MFA...\n")
+	fmt.Fprintf(os.Stderr, "waiting for login...\n")
+
+	if assumingProfile.SourceProfile == "" {
+		return
+	}
 
 	// wait for browser title change
 	for {
@@ -170,7 +183,7 @@ func main() {
 	page.FindByID("switchrole_firstrun_button").Click()
 
 	// do the switch role
-	page.FindByID("account").Fill(profs[prof].AccountID)
-	page.FindByID("roleName").Fill(profs[prof].RoleName)
+	page.FindByID("account").Fill(profs[prof].AssumingAccountID)
+	page.FindByID("roleName").Fill(profs[prof].AssumingRoleName)
 	page.FindByID("input_switchrole_button").Click()
 }
