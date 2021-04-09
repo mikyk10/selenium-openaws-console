@@ -98,7 +98,7 @@ func main() {
 			SourceProfile: sections[i].Key("source_profile").Value(),
 		}
 
-		if len(roleArn) == 5 {
+		if len(roleArn) == 6 {
 			p.AssumingRoleName = strings.Replace(roleArn[5], "role/", "", 1)
 			p.AssumingAccountID = roleArn[4]
 		}
