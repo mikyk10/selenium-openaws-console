@@ -26,6 +26,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 	"time"
 
@@ -112,12 +113,27 @@ func main() {
 		}
 
 		profs[pname] = p
-		fmt.Printf("%s : %s\n", pname, sections[i].Key("role_arn"))
 	}
 
-	fmt.Print("Profile Name: ")
-	reader := bufio.NewReader(os.Stdin)
-	text, _ := reader.ReadString('\n')
+	var text string
+	if len(os.Args) == 1 {
+		pnames := []string{}
+		for key := range profs {
+			pnames = append(pnames, key)
+		}
+		sort.Slice(pnames, func(i, j int) bool {
+			return pnames[i] < pnames[j]
+		})
+		for i := range pnames {
+			fmt.Println(pnames[i])
+		}
+		fmt.Print("Profile Name: ")
+		reader := bufio.NewReader(os.Stdin)
+		text, _ = reader.ReadString('\n')
+	} else {
+		text = os.Args[1]
+	}
+
 	prof := strings.Replace(text, "\n", "", -1)
 	sourceProfile = profs[prof]
 	assumingProfile = profs[prof]
