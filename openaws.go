@@ -32,6 +32,7 @@ import (
 
 	"os"
 
+	"github.com/manifoldco/promptui"
 	"github.com/sclevine/agouti"
 	"gopkg.in/ini.v1"
 )
@@ -124,12 +125,20 @@ func main() {
 		sort.Slice(pnames, func(i, j int) bool {
 			return pnames[i] < pnames[j]
 		})
-		for i := range pnames {
-			fmt.Println(pnames[i])
+
+		prompt := promptui.Select{
+			Label:     "Choose AWS Profile: ",
+			HideHelp:  true,
+			Items:     pnames,
+			Size:      20,
+			Templates: &promptui.SelectTemplates{Active: "{{.|red|cyan}}", Inactive: "{{.}}", Selected: "{{.}}"},
 		}
-		fmt.Print("Profile Name: ")
-		reader := bufio.NewReader(os.Stdin)
-		text, _ = reader.ReadString('\n')
+		i, _, err := prompt.Run()
+		if err != nil {
+			os.Exit(1)
+		}
+
+		text = pnames[i]
 	} else {
 		text = os.Args[1]
 	}
