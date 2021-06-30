@@ -204,7 +204,8 @@ func main() {
 	// visit Switch Role
 	fmt.Fprintf(os.Stderr, "ok. assuming a role\n")
 	page.FindByID("nav-usernameMenu").Click()
-	page.FindByLink("Switch Roles").Click()
+	//page.FindByLink("Switch Roles").Click()
+	page.FindByXPath("//a[@data-testid='awsc-switch-roles']").Click()
 	page.FindByID("switchrole_firstrun_button").Click()
 
 	// do the switch role
